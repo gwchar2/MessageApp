@@ -44,7 +44,7 @@ const std::string& AESWrapper::getKey() const { return _key;}
  * Encrypts a plaintext message using AES-128 in CBC mode with a fixed IV (not secure for real use).
  * Returns the encrypted ciphertext as a std::string.
  */
-std::string AESWrapper::encrypt(const std::string& plain) {
+std::string AESWrapper::encrypt(const std::string& plain) const{
     CryptoPP::byte iv[CryptoPP::AES::BLOCKSIZE] = {0}; // Fixed IV (unsafe in real applications)
     
     CryptoPP::AES::Encryption aesEncryption(reinterpret_cast<const CryptoPP::byte*>(_key.data()), DEFAULT_KEYLENGTH);
@@ -62,7 +62,7 @@ std::string AESWrapper::encrypt(const std::string& plain) {
  * Decrypts a ciphertext using AES-128 in CBC mode with a fixed IV.
  * Returns the decrypted plaintext as a std::string.
  */
-std::string AESWrapper::decrypt(const std::string& cipher) {
+std::string AESWrapper::decrypt(const std::string& cipher) const{
     CryptoPP::byte iv[CryptoPP::AES::BLOCKSIZE] = {0}; // Fixed IV (unsafe in real applications)
     
     CryptoPP::AES::Decryption aesDecryption(reinterpret_cast<const CryptoPP::byte*>(_key.data()), DEFAULT_KEYLENGTH);

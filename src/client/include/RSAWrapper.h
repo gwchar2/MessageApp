@@ -32,8 +32,8 @@ class RSAPublicWrapper{
 	public:
 		static const unsigned int KEYSIZE = 160;
 		static const unsigned int BITS = 1024;
-
 		RSAPublicWrapper(const std::string& key);					// Loads an existing public key from a string.
+		RSAPublicWrapper() = default;
 		std::string getPublicKey() const;							// Returns the public key as a string.
 		std::string encrypt(const std::string& plain);				// Encrypts plaintext using the public key
 		RSAPublicWrapper& operator=(const RSAPublicWrapper& rsaprivate);			// Deep copy for operator = mostly for User class

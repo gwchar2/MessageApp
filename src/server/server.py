@@ -1,6 +1,12 @@
 import socket
 import threading
+import selectors
 import os
+import database
+import request
+import struct
+from database import initialize_database 
+from request import Request  
 
 # Read the server port from myport.info
 def get_server_info():
@@ -9,44 +15,64 @@ def get_server_info():
         port = file.readline().strip()
         return int(port)
 
-# Handle client requests
-def handle_client(client_socket, client_address):
-    print(f"[NEW CONNECTION] {client_address} connected.")
 
-    while True:
-        try:            # Receive data from the client
-            data = client_socket.recv(1024)
-            if not data:
-                break  # Client disconnected
+sel = selectors.DefaultSelector()
 
-            print(f"[RECEIVED] From {client_address}:\n {data}")
 
-            # Send a response back
-            client_socket.sendall(data)
-            
-            print(f"Sent : {data}")
-        except ConnectionResetError:
-            print(f"[DISCONNECTED] {client_address} lost connection.")
-            break
-
-    client_socket.close()
-    print(f"[CONNECTION CLOSED] {client_address} disconnected.")
-
-# Start the server
 def start_server():
-    port = get_server_info()
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(("0.0.0.0", port))
+    HOST = "0.0.0.0"
+    PORT = get_server_info()  
+    initialize_database()  
+    server_socket = socket.socket()
+    server_socket.bind((HOST, PORT))
     server_socket.listen()
+    server_socket.setblocking(False)
+    sel.register(server_socket, selectors.EVENT_READ, accept_client)
+    
+    print(f"[LISTENING] Server is listening on Port {PORT}...")
+    try:
+        while True:
+            events = sel.select()
+            for key, _ in events:
+                callback = key.data
+                callback(key.fileobj)
+    except KeyboardInterrupt:
+        print("\n[INFO] Server shutting down...")
+    finally:
+        sel.close()
 
-    print(f"[LISTENING] Server is listening on port {port}...")
 
-    while True:
-        client_socket, client_address = server_socket.accept()
-        client_thread = threading.Thread(target=handle_client, args=(client_socket, client_address))
-        client_thread.start()
+def accept_client(server_socket):
+    client_socket, client_address = server_socket.accept()
+    print(f"[NEW CONNECTION] {client_address} connected.")
+    client_socket.setblocking(False)
+    sel.register(client_socket, selectors.EVENT_READ, handle_client)
 
-        print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
+
+def handle_client(client_socket):
+    try:
+        request = Request(client_socket)
+        if request is not None:
+            print(request)
+            request.handle_request()
+        
+        
+        # Send response back (for example purposes, echoing back)
+        #client_socket.sendall(data)
+    except ConnectionResetError as e:
+        print(f"[DISCONNECTED] Client lost connection: {e}")
+        sel.unregister(client_socket)
+
+    except Exception as e:
+        print(f"[DISCONNECTED] Client lost connection.")
+        disconnect_client(client_socket)
+
+
+def disconnect_client(client_socket):
+    sel.unregister(client_socket)
+    client_socket.close()
+    print(f"[CONNECTION CLOSED] {client_socket.getpeername()} disconnected.")
 
 if __name__ == "__main__":
     start_server()
+        

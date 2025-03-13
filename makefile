@@ -11,10 +11,10 @@ INCLUDE_DIR = src/client/include
 BUILD_DIR = src/client/build
 
 # CLIENT source files
-CLIENT_SRC = $(SRC_DIR)/interaction.cpp \
+CLIENT_SRC = $(SRC_DIR)/main.cpp \
+			 $(CLIENT_DIR)/protocolhandler.cpp \
 			 $(CLIENT_DIR)/client.cpp \
 			 $(CLIENT_DIR)/helpers.cpp \
-			 $(CLIENT_DIR)/protocolhandler.cpp \
 			 $(CLIENT_DIR)/user.cpp \
              $(ENCRYPTION_DIR)/AESWrapper.cpp \
 			 $(ENCRYPTION_DIR)/RSAWrapper.cpp \
@@ -43,7 +43,7 @@ $(CLIENT_EXEC): $(CLIENT_OBJ)
 
 # Clean up the build
 clean:
-	rm -rf $(BUILD_DIR)/*.o $(CLIENT_EXEC)
+	rm -rf $(BUILD_DIR) $(CLIENT_EXEC)
 
 # Rebuild everything from scratch
 rebuild: clean all

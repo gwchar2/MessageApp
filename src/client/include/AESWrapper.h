@@ -34,8 +34,8 @@ class AESWrapper{
 		static std::string GenerateKey();									// Generates a random AES key of specified length and stores it in buffer
 		const std::string& getKey() const;									// Retrieves the AES key
 
-		std::string encrypt(const std::string& plain);						// Encrypts plaintext and returns the ciphertext
-		std::string decrypt(const std::string& cipher);						// Decrypts ciphertext and returns the plaintext
+		std::string encrypt(const std::string& plain) const;						// Encrypts plaintext and returns the ciphertext
+		std::string decrypt(const std::string& cipher) const;						// Decrypts ciphertext and returns the plaintext
 		
 	private:
 		std::string _key;													// AES key storage

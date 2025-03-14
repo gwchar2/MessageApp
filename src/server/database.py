@@ -61,8 +61,9 @@ def sendMessageToTarget(ToClient: bytes, FromClient: bytes, Type : bytes, Conten
         if cursor.rowcount <= 0:
             raise RuntimeError("Insertion failed: No rows were inserted.")
 
+        lastrow = struct.pack("I", cursor.lastrowid) # We just make sure its 4 bytes long
         conn.commit()
-        return True  
+        return lastrow
 
     except sqlite3.Error as e:
         raise RuntimeError(f"Database error: {e}")

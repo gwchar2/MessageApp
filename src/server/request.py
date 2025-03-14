@@ -4,8 +4,10 @@ import logger
 import uuid
 import database
 import pickle
+import response
 from datetime import datetime
 from enum import IntEnum
+
 
 MAX_BLOCK_SIZE = 2048
 
@@ -132,53 +134,25 @@ class Request:
 
     # Receives OpCode, but messagetype can be none
     def handle_request(self):
-        match self.OpCode:
-            # req 600
-            case RequestOp.REQ_REGISTER:
-                self.registerRequest()
-            # req 601
-            case RequestOp.REQ_USER_LIST:
-                print("Fetching user list")
-                self.userlistRequest()
-            # req 602
-            case RequestOp.REQ_PUBLIC_KEY:
-                print("Fetching public key")
-                self.publicKeyRequest()
-            # req 603
-            case RequestOp.REQ_MESSAGE_TO_USER:
-                # Need to parse message header
-                # (page 8)
-                #Need to fill here func to get message type!!!
-                #Parse message type from here on!!
-                if self.messageType is None:
-                    print("Error: message_type required for REQ_MESSAGE_TO_USER")
-                    return
-                
-                match self.messageType:
-                    # type 1
-                    case MessageType.REQ_SYMMETRIC_KEY:
-                        print("Handling request for symmetric key")
-                    # type 2
-                    case MessageType.SEND_SYMMETRIC_KEY:
-                        print("Handling sending of symmetric key")
-                    # type 3
-                    case MessageType.SEND_TEXT_MSG:
-                        print("Handling sending of text message")
-                    # type 4
-                    case MessageType.SEND_FILE:
-                        print("Handling file transfer")
-                    #default
-                    case _:
-                        print("Unknown message type")
+        try:    # We handle all errors from all requests in this try-catch, sending general error for everything.
+            match self.OpCode:
+                case RequestOp.REQ_REGISTER:
+                    self.registerRequest()
+                case RequestOp.REQ_USER_LIST:
+                    self.userlistRequest()
+                case RequestOp.REQ_PUBLIC_KEY:
+                    self.publicKeyRequest()
+                case RequestOp.REQ_MESSAGE_TO_USER:
+                    self.messageToUserRequest()
+                case RequestOp.REQ_AWAITING_MESSAGES:
+                    self.collectMsgsRequest()
 
-            # req 604
-            case RequestOp.REQ_AWAITING_MESSAGES:
-                self.collectMsgsRequest()
-                print("Checking awaiting messages")
-
-            case _:
-                print("Unknown request operation")
-
+        except Exception as e:
+            print(f"[Error] parsing request {self.OpCode}: {e}")  
+            response = response.Response(response.ResponseOp.RESP_GENERAL_ERROR, 0)
+            printf(f"{response}")
+            self.socket.sendall(response.build_message())
+            
 
     def registerRequest(self):
         # Grabbing username
@@ -190,13 +164,14 @@ class Request:
         #Checking that the UUID and username are unique
         id_exists, username_exists = database.userCheck(rndUUID,username)
 
-        # While the ID exists, we keep creating a new one.
-        while (id_exists):
+        # if the ID exists, we keep creating a new one.
+        if id_exists:
             rndUUID = uuid.uuid4().bytes
             id_exists, username_exists = userCheck(rndUUID,username)
 
-        #if (username_exists)
-            #send general error
+        # If username exists, we raise error to prompt for a new one!
+        if username_exists:
+            raise ValueError("Username already exists!! Send general error")
 
         # Grabbing public key and registering 
         publicKey = self.receive_all(160)
@@ -206,52 +181,122 @@ class Request:
               f"Username: {readable_name}\n"
               f"UUID: {logger.format_hex(rndUUID)}\n"
               f"Public Key: {logger.format_hex(publicKey)}\n")
+        
+        # Building and sending the response
+        response = response.Response(
+            responseOp=response.ResponseOp.RESP_REGISTER_SUCCESSFULL,
+            payloadSize=len(rndUUID),
+            clientID=rndUUID
+        )
+        message = response.build_message()
+        self.socket.sendall(message)
 
     def userlistRequest(self):
+        # We check that our UUID exists, else we won't have a proper response! Raise error if it doesnt.
         id_exists = database.userCheck(self.UUID)
-        if (id_exists):
-            print(f"Sending user list to {logger.format_hex(self.UUID)}")
-        #else:
-            #send error
+        if id_exists is None:
+            raise ValueError(f"Such UUID {logger.format_hex(self.UUID)} Does not exist!")
+        print(f"Sending user list to {logger.format_hex(self.UUID)}")
 
+        # We grab the user list from the database.
         user_list = database.getAllUsers(self.UUID)
-        user_dump = pickle.dumps(user_list)
         for uuid, user in user_list:
             print(f"{[(logger.format_hex(uuid),user.rstrip('0'))]}")
       
-        # need to send user list 
+        # Building and sending the response
+        user_dump = pickle.dumps(user_list)
+        response = response.Response(
+            responseOp=response.ResponseOp.RESP_USER_LIST,
+            payloadSize=len(user_dump)
+        )
+        message = response.build_message(user_dump)
+        self.socket.sendall(message)
 
     def publicKeyRequest(self):
         target_uuid = self.receive_all(16)
+
+        # We check that target UUID exists, else we won't have a proper response! Raise error if it doesnt.
+        id_exists = database.userCheck(target_uuid)
+        if id_exists is None:
+            raise ValueError(f"Such UUID {logger.format_hex(target_uuid)} Does not exist!")
+
+        # We grab the public key of target UUID
         publicKey = database.getPublicKey(target_uuid)
         printf(f"Sending public key of:\n"  
             f"  Target: {logger.format_hex(target_uuid)}\n"    
             f"  Asker: {logger.format_hex(self.UUID)}\n"
             f"  Target Public Key: {logger.format_hex(publicKey)}")
-
+        
+        # Building and sending the response
+        response = response.Response(
+            responseOp=response.ResponseOp.RESP_PUBLIC_KEY,
+            payloadSize=len(publicKey) + len(target_uuid),
+            clientID=target_uuid,
+            publicKey=publicKey
+        )
+        message = response.build_message()
+        self.socket.sendall(message)
 
     def messageToUserRequest(self):
+        # We get the "header" of the payload, and unpack the data of it.
         PAYLOAD_HEADER_FORMAT = '16s B I'
         PAYLOAD_HEADER_SIZE = struct.calcsize(PAYLOAD_HEADER_FORMAT)
-
         payload_header_data = self.receive_all(PAYLOAD_HEADER_SIZE)
         target_UUID, msg_type, content_size = struct.unpack(PAYLOAD_HEADER_FORMAT, payload_header_data)
         content = None
+
+        # We check that target UUID exists, else we won't have a proper response! Raise error if it doesnt.
+        id_exists = database.userCheck(target_UUID)
+        if id_exists is None:
+            raise ValueError(f"No such UUID {logger.format_hex(target_UUID)}")
+
         print(f"Message Header:\n{logger.format_hex(payload_header_data, 1)}")
+        print(f"Sending message to user {logger.format_hex(target_UUID)}")
 
         # Handle sending of symmetric key
         if msg_type != MessageType.REQ_SYMMETRIC_KEY:
             content = self.receive_all(content_size)
         
-        try:
-            database.sendMessageToTarget(target_UUID,self.UUID,msg_type,content)
-        except RuntimeError:
-            #Send general error
-            print(f"Send general error")
+        # We send a message to target UUID, and for confirmation we get the specific ID from table.
+        messageID = database.sendMessageToTarget(target_UUID,self.UUID,msg_type,content)
+        
+        # Building and sending the response
+        response = response.Response(
+            responseOp=response.ResponseOp.RESP_MSG_SENT_TO_USER,
+            payloadSize=len(target_uuid) + len(messageID),
+            clientID=target_uuid,
+            messageID=messageID
+        )
+        message = response.build_message()
+        self.socket.sendall(message)
     
     def collectMsgsRequest(self):
+        # We check that our UUID exists, else we won't have a proper response! Raise error if it doesnt.
+        id_exists = database.userCheck(self.UUID)
+        if id_exists is None:
+            raise ValueError(f"No such UUID {logger.format_hex(self.UUID)}")
+        
         messages = database.getAllMessage(self.UUID)
         print(f"Messages Retreived: \n"
             f"{logger.format_hex(messages)}")
+
+        # We parse into bytes
+        for msg_id, from_client, msg_type, content in messages:
+            content = content if content else b'' #We make sure the content is binary.
+            # We parse the messages according to header, since its different than the return from the database.
+            # We pay attention that we do not need to send as little endian, since this is payload. 
+            byte_msg = (
+                from_client +                          
+                struct.pack("I", msg_id) +            
+                struct.pack("B", msg_type) +         
+                struct.pack("I", len(content)) +      
+                content)
+        
+        # Building and sending the response
+        response = response.Response(
+            responseOp=response.ResponseOp.RESP_AWAITING_MESSAGES,
+            payloadSize=len(byte_msg))
+        message = response.build_message(byte_msg)
+        self.socket.sendall(message)
 
 

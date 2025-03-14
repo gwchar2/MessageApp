@@ -69,9 +69,9 @@ def handle_client(client_socket):
 
 
 def disconnect_client(client_socket):
+    print(f"[CONNECTION CLOSED] {client_socket.getpeername()} disconnected.")
     sel.unregister(client_socket)
     client_socket.close()
-    print(f"[CONNECTION CLOSED] {client_socket.getpeername()} disconnected.")
 
 if __name__ == "__main__":
     start_server()

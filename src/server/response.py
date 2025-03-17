@@ -14,7 +14,7 @@ class ResponseOp(IntEnum):
 class Response:
     RESPONSE_HEADER = "<B H I" 
 
-    def __init__(self, responseOp : ResponseOp, payloadSize, clientID = None, clientName = None, publicKey = None):
+    def __init__(self, responseOp : ResponseOp, payloadSize, clientID = None, clientName = None, publicKey = None): 
         self.version = 2                        # Always 2
         self.op = responseOp                    # 2 bytes
         self.payload_size = payloadSize         # 4 bytes
@@ -38,15 +38,24 @@ class Response:
             elif self.op == ResponseOp.RESP_PUBLIC_KEY and self.clientID and self.public_key:
                 return header + self.clientID + self.public_key
             
-            elif self.op == ResponseOp.RESP_MSG_SENT_TO_USER and self.clientID and self.messageID:
-                return header + self.clientID + self.messageID
+            elif self.op == ResponseOp.RESP_MSG_SENT_TO_USER and self.clientID:
+                return header + self.clientID
             
             elif self.op == ResponseOp.RESP_AWAITING_MESSAGES and payload:
                 return header + payload
             
             elif self.op == ResponseOp.RESP_GENERAL_ERROR:
-                return struct.pack(self.RESP_GENERAL_ERROR, self.version, self.op.value,0)
+                return header
             
         except Exception as e:
             print(f"Error occurred while creating a message: {e}")
             return header
+    
+    def __str__(self):
+       return ( f"Version: {self.version}\n"
+                f"Op: {self.op}\n"
+                f"Payload Size: {self.payload_size}\n"
+                f"Total Size: {self.payload_size}\n"
+                f"Target ID: {self.clientID}\n"
+                f"Target Username: {self.username}\n"
+                f"Public Key: {self.public_key}")

@@ -1,8 +1,5 @@
 import inspect
 
-# I hate python....I lost motivation making my owner logger class....
-# I will survive with print >:(
-
 def format_hex(data: bytes, group_size: int = 4) -> str:
     try:
         hex_str = data.hex()  

@@ -10,26 +10,25 @@
 void ProtocolManager::setRequestHeader(std::array<uint8_t,16> clientID, uint8_t version, uint16_t requestOp){
     requestHeader.clientID = clientID;
     requestHeader.version = version;
-    if (boost::endian::order::native == boost::endian::order::big)
+    if(boost::endian::order::native == boost::endian::order::little)
+        requestHeader.requestOp = requestOp;
+    else 
         requestHeader.requestOp = boost::endian::native_to_little(requestOp);
-    else requestHeader.requestOp = requestOp;
 }
 
 void ProtocolManager::setPayloadSize(uint32_t payloadSize) {
-    if (boost::endian::order::native == boost::endian::order::big)
-        requestHeader.payloadSize = boost::endian::native_to_little(payloadSize);
-    else requestHeader.payloadSize = payloadSize;
-}
-/* Parses the resposne header properly, while turning payloadsize and responseop to big endian. */
-void ProtocolManager::setResponseHeader(uint8_t version, uint16_t responseOp, uint32_t payloadSize){
-    responseHeader.version = version;
-    responseHeader.responseOp = boost::endian::little_to_native(responseOp);
-    responseHeader.payloadSize = boost::endian::little_to_native(payloadSize);
+    if(boost::endian::order::native == boost::endian::order::little)
+        requestHeader.payloadSize = payloadSize;
+    else requestHeader.payloadSize = boost::endian::native_to_little(payloadSize);
 }
 
 void ProtocolManager::setMessageHeader(std::string target_uuid, uint8_t msg_type, uint32_t content_size){
     payload.clear();
-    if (boost::endian::order::native == boost::endian::order::big){
+    if(boost::endian::order::native == boost::endian::order::little){
+        msg_type = msg_type;
+        content_size = content_size;
+    }
+    else{
         msg_type = boost::endian::native_to_little(msg_type);
         content_size = boost::endian::native_to_little(content_size);
     }
@@ -46,6 +45,15 @@ ResponseHeader ProtocolManager::getResponseHeader() const {
     return responseHeader;
 }
 
+void ProtocolManager::printResponseHeader() {   
+    std::cout << "Raw Header Bytes: ";
+    for (size_t i = 0; i < payload.size(); ++i)
+        std::cout << std::hex << std::setfill('0') << std::setw(2) << (int)payload[i] << " ";
+    std::cout << std::dec << std::endl;
+    std::cout << "Version: " << (int)responseHeader.version << std::endl;
+    std::cout << "ResponseOp: " << responseHeader.responseOp << std::endl;
+    std::cout << "Payload Size: " << responseHeader.payloadSize << std::endl;
+}
 
 /* Returns a vector of vectors. First vector includes header + message. 
     If message is greater than MAX_BUFFER size, we split it into more vectors, appended. */
@@ -86,32 +94,6 @@ std::vector<std::vector<unsigned char>> ProtocolManager::createMessage(){
     }
 
     return messageChunks;
-}
-
-std::pair<ResponseHeader,std::vector<unsigned char>> ProtocolManager::parseResponse(std::vector<unsigned char>& response){
-    /* We check to see the response is appropriate */
-    if (response.size() < sizeof(ResponseHeader))
-        throw std::runtime_error("Buffer size is to small! Response is invalid.");
-
-    /* We make the variables, easier to copy. */
-    uint8_t version = response[0];
-    uint16_t responseOp;
-    uint32_t payloadSize;
-
-    /* We copy into them the required data, we copy as is because little -> big endian is controlled in set func. */
-    std::memcpy(&responseOp, response.data()+1, sizeof(responseOp));
-    std::memcpy(&payloadSize, response.data()+3, sizeof(payloadSize));
-
-    /* We construct the response header */
-    setResponseHeader(version, responseOp, payloadSize);
-
-    /* If the payload is not empty already, we will clear it, and assign the remainder of the data to it. */
-    if (!payload.empty())   payload.clear();
-    payload.assign(response.begin() + sizeof(ResponseHeader), response.end());
-    
-    /* We return the payload vector and the response header to continue parsing it. */
-    return {responseHeader, payload};
-
 }
 
 void ProtocolManager::messageHandler(int choice, Client* client){
@@ -292,5 +274,63 @@ void ProtocolManager::messageHandler(int choice, Client* client){
         default:
             throw std::runtime_error("Error choosing option, try again.");
     }
+
+}
+
+void ProtocolManager::responseHandler(Client* client){
+    /* We start by clearing the payload buffer */
+    payload.clear();
+
+    /* Catch the header & Copy it to response header */
+    payload = client -> receiveMessage(sizeof(ResponseHeader));
+    memcpy(&responseHeader,payload.data(),sizeof(ResponseHeader));
+
+    /* Print the header received, this is mostly for debugging. */
+    printResponseHeader();
+
+    /* We get the remainder of the payload from the socket */
+    payload = client -> receiveMessage(responseHeader.payloadSize);
+       
+    
+    switch(static_cast<ResponseOp>(responseHeader.responseOp)){
+        case ResponseOp::RESP_REGISTER_SUCCESSFULL :{
+            /* Open the me.info file */
+            std::ofstream file("me.info");
+            if (!file)  throw std::runtime_error("Error opening file me.info");
+            /* First row: username*/
+            file << client -> getUser().value().getName() << std::endl;
+            /* Second row: UUID*/
+            for (unsigned char c : payload)
+                file << std::hex << std::setw(2) << std::setfill('0') << (int)c << "";
+            file << std::endl;
+            /* Third row: Private key in base 64*/
+            std::string base64 = Base64Wrapper::encode(client -> getUser().value().getDecryptor().value().getPrivateKey());
+            file << base64 << std::endl;
+            file.close();
+
+            std::cout << client -> getUser().value().getDecryptor().value().getPrivateKey() << std::endl;
+            break;
+        }
+        case ResponseOp::RESP_USER_LIST : 
+            break;
+        // saves user list in client -> members. ClientData(username, uuid) 
+        // prints the names of users
+        case ResponseOp::RESP_PUBLIC_KEY :
+            break;
+        // saves the information in client -> members . setPublicKey(key)
+        // possible because needs to ask for members list BEFORE key request.
+        case ResponseOp::RESP_MSG_SENT_TO_USER :
+            break;
+        // 'message sent to client' , can probably print the message ID too
+        case ResponseOp::RESP_AWAITING_MESSAGES : 
+            break;  
+        // must print all the messages, ID FROM TYPE CONTENT
+        
+        //case ResponseOp::RESP_GENERAL_ERROR : Handled in default!
+        default:
+            throw std::runtime_error("General Error received, please try again!");
+    
+    }
+
 
 }

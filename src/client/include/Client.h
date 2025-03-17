@@ -56,7 +56,7 @@ class Client {
         void connectToServer();
         void closeConnection();
         void sendMessage(const std::vector<std::vector<unsigned char>>& message);
-        std::string recieveMessage();
+        std::vector<unsigned char> receiveMessage(size_t size);
 
     private:
         std::optional<User> user;

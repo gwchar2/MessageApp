@@ -33,19 +33,28 @@ std::pair<std::string, int> getServerInfo() {
 
 /* Reads user data from my.info */
 std::vector<std::string> getUserInfo() {
-    std::ifstream file("my.info");
+    std::ifstream file("me.info");
     std::vector<std::string> user_info;
     if (!file.is_open()) return user_info;
 
     std::string line;
 
-    for (int i = 0 ; i < 3 ; i ++ ){
+    for (int i = 0 ; i < 2 ; i ++ ){
         if (!std::getline(file,line)){
             user_info.clear();
             return user_info;
         }
         user_info.push_back(line);
     }
+
+    std::string privateKey;
+    while ( std::getline(file,line)){
+        if (!privateKey.empty()) privateKey += "\n";
+        privateKey += line;
+    }
+    
+    if (!privateKey.empty())
+        user_info.push_back(privateKey);
 
     return user_info;
 }

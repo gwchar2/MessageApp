@@ -1,8 +1,8 @@
 #ifndef RSA_WRAPPER_H
 #define RSA_WRAPPER_H
 
-#pragma once
 
+#pragma once
 #include <osrng.h>
 #include <rsa.h>
 #include <string>

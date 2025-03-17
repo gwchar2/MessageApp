@@ -17,6 +17,7 @@ void Client::setUser(const std::string& name){
 const std::optional<User>& Client::getUser() const {
     return user;
 }
+
 std::vector<ClientData>& Client::getMembers() {
     return members;
 }
@@ -40,10 +41,7 @@ ClientData& Client::getMember() {
 }
 
 bool Client::isConnected() {
-    if (!socket.is_open()){
-        return false;
-    }
-    return true;
+    return socket.is_open();
 }
 
 void Client::connectToServer() {
@@ -62,24 +60,32 @@ void Client::sendMessage(const std::vector<std::vector<unsigned char>>& messages
         boost::asio::write(socket, boost::asio::buffer(message.data(), message.size()));
 }
 
-std::string Client::recieveMessage() {
-    try {
-        std::string buffer(128, '\0'); // Allocate buffer for up to 128 bytes -> NEED TO RESIZE LATER WHEN EDITTING PROTOCOL
+std::vector<unsigned char> Client::receiveMessage(size_t size) {
+    /* Create a buffer of size size*/
+    std::vector<unsigned char> buffer(size);
+    size_t total_bytes_read = 0;
 
-        // Read data into the buffer
-        size_t bytesRead = socket.read_some(boost::asio::buffer(buffer));
+    /* Set the total bytes read to check */
+    //
+    /* As long as we dont receive the bytes of amount size, we keep going.
+        If we don't read anything, we return a runtime error since the connection probably disconnected. */
+    while (total_bytes_read < size) {
+        
+        size_t bytes_read = socket.read_some(boost::asio::buffer(buffer.data() + total_bytes_read, size - total_bytes_read));
 
-        // Resize string to actual received size
-        buffer.resize(bytesRead);
-
-        std::cout << "[RECEIVED] " << bytesRead << " bytes of encrypted data" << std::endl;
-
-        return buffer;
-    } catch (std::exception& e) {
-        std::cerr << "[ERROR] Receiving failed: " << e.what() << std::endl;
-        return "";
+        if (bytes_read == 0) 
+            throw std::runtime_error("Server disconnected");
+        total_bytes_read += bytes_read;
     }
+
+    /* Let the user know how many bytes received, we have private functions for printing each part. */
+    std::cout << "\n[RECEIVED] " << total_bytes_read << " bytes of data: " << std::endl;
+    for (size_t i = 0; i < buffer.size(); ++i)
+        std::cout << std::hex << std::setfill('0') << std::setw(2) << (int)buffer[i] << " ";
+    std::cout << std::dec << std::endl;
+    return buffer;
 }
+
 
 void Client::closeConnection() {
     socket.close();
@@ -87,16 +93,21 @@ void Client::closeConnection() {
 }
 
 void Client::clientService(){
-    if (!isConnected()) return;
-    /* Printing entry message */
+    
+    /* Printing entry message & UI */
     int choice = openingMessage(this);
     
+    /* Attempting to handle building and sending the message */
     try {
         protocolManager.messageHandler(choice, this);
         sendMessage(protocolManager.createMessage());
+        /* Process received response from server */
+        protocolManager.responseHandler(this);
+        
     } catch (const std::exception & e){
         std::cerr << e.what() << std::endl;
     }
+
     
 }
 

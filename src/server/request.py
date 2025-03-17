@@ -4,7 +4,7 @@ import logger
 import uuid
 import database
 import pickle
-import response
+from response import Response, ResponseOp  
 from datetime import datetime
 from enum import IntEnum
 
@@ -149,9 +149,10 @@ class Request:
 
         except Exception as e:
             print(f"[Error] parsing request {self.OpCode}: {e}")  
-            response = response.Response(response.ResponseOp.RESP_GENERAL_ERROR, 0)
-            printf(f"{response}")
+            response = Response(ResponseOp.RESP_GENERAL_ERROR, 0)
+            self.socket.recv(4096) # We 'flush' the socket
             self.socket.sendall(response.build_message())
+            print(response)
             
 
     def registerRequest(self):
@@ -183,8 +184,8 @@ class Request:
               f"Public Key: {logger.format_hex(publicKey)}\n")
         
         # Building and sending the response
-        response = response.Response(
-            responseOp=response.ResponseOp.RESP_REGISTER_SUCCESSFULL,
+        response = Response(
+            responseOp=ResponseOp.RESP_REGISTER_SUCCESSFULL,
             payloadSize=len(rndUUID),
             clientID=rndUUID
         )

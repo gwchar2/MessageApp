@@ -10,7 +10,7 @@
 #include <cstring>
 #include <optional>
 
-#define MAX_BUFFER 2048
+#define MAX_BUFFER 4096
 
 class Client;
 
@@ -50,11 +50,13 @@ struct RequestHeader {
 };
 
 /* A response header */
+#pragma pack(1)
 struct ResponseHeader {
     uint8_t version;       
     uint16_t responseOp;
     uint32_t payloadSize;  
 };
+#pragma pack()
 
 class ProtocolManager{
     public: 
@@ -63,21 +65,20 @@ class ProtocolManager{
         
         /* Makes a new header upon request */
         void setRequestHeader(std::array<uint8_t,16> clientID, uint8_t version, uint16_t requestOp);      
-        void setResponseHeader(uint8_t version, uint16_t responseOp, uint32_t payloadSize);
         void setMessageHeader(std::string target_uuid, uint8_t msg_type, uint32_t content_size);
         void setPayloadSize(uint32_t payloadSize);
+        
         /* Gets a header */
         RequestHeader getRequestHeader() const;
         ResponseHeader getResponseHeader() const;
         
         /* Creates messages or parses responses from server according to data */
         std::vector<std::vector<unsigned char>> createMessage();
-        std::pair<ResponseHeader,std::vector<unsigned char>> parseResponse(std::vector<unsigned char>& response);
 
         /* Controls the messages and responses sent/received */
         void messageHandler(int choice,Client* client);                                                                    // switch(message op)
-        void responseHandler(std::pair<ResponseHeader,std::vector<unsigned char>> response);                  // switch(response op)
-
+        void responseHandler(Client* client);                  // switch(response op)
+        void printResponseHeader();
 
     private:
         RequestHeader requestHeader;

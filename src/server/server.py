@@ -20,7 +20,7 @@ sel = selectors.DefaultSelector()
 
 
 def start_server():
-    HOST = "0.0.0.0"
+    HOST = "127.0.0.1"
     PORT = get_server_info()  
     initialize_database()  
     server_socket = socket.socket()
@@ -52,13 +52,10 @@ def accept_client(server_socket):
 def handle_client(client_socket):
     try:
         request = Request(client_socket)
-        if request is not None:
+        if request:
             print(request)
             request.handle_request()
         
-        
-        # Send response back (for example purposes, echoing back)
-        #client_socket.sendall(data)
     except ConnectionResetError as e:
         print(f"[DISCONNECTED] Client lost connection: {e}")
         sel.unregister(client_socket)

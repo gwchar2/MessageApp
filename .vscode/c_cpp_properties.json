@@ -5,7 +5,8 @@
             "includePath": [
                 "${default}",
                 "C:/Users/hwath/cryptopp",
-                "C:/Users/hwath/cryptopp/include"
+                "C:/Users/hwath/cryptopp/include",
+                "C:/Users/hwath/cryptopp/include/osrng.h"
             ],
             "defines": [
                 "_DEBUG",
@@ -13,9 +14,10 @@
                 "_UNICODE"
             ],
             "windowsSdkVersion": "10.0.22621.0",
+            "compilerPath": "C:/msys64/mingw64/bin/g++.exe",
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "windows-msvc-x64"
+            "intelliSenseMode": "windows-gcc-x64"
         }
     ],
     "version": 4

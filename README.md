@@ -34,22 +34,22 @@ MessageApp is a client-server-based secure messaging system. It uses **RSA (asym
 /MessageApp
  -/src 
       -/client 
-             -/ include 
+             -/src
+               -/ include 
                   - AESWrapper.h
                   - RSAWrapper.h
                   - Client.h
                   - Helpers.h
                   - ProtocolManager.h
                   - User.h
-             -/src
-                  -/client
-                       - client.cpp
-                       - helpers.cpp
-                       - protocolhandler.cpp
-                       - user.cpp
+               -/client
+                  - client.cpp
+                  - helpers.cpp
+                  - protocolhandler.cpp
+                  - user.cpp
                -/encryption
-                       - AESWrapper.cpp
-                       - RSAWrapper.cpp
+                  - AESWrapper.cpp
+                  - RSAWrapper.cpp
       -/server
             - database.py
             - logger.py

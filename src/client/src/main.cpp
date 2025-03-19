@@ -14,7 +14,7 @@ int main() {
         std::vector<std::string> user_info = getUserInfo();
 
         if(!user_info.empty())
-                client.setUser(user_info[0],user_info[1],user_info[2]);
+            client.setUser(user_info[0],user_info[1],user_info[2]);
         
         /* Client Service Function */
         while (client.isConnected()) {
@@ -22,10 +22,10 @@ int main() {
         }
         
         /* If the server is not connected, and we only notice this after the while, throw a runtime error */
-        throw std::runtime_error(getPlaceHolder(PlaceHolder::SERVER_DISCONNECTED));
+        throw std::runtime_error(RED "Server disconnected. Exiting client." RESET);
 
     } catch (const std::exception& e) {
-        std::cerr << getPlaceHolder(PlaceHolder::PH_ERROR) << e.what() << std::endl;
+        std::cerr << RED  "[ERROR] "  RESET << e.what() << std::endl;
         
     }
 

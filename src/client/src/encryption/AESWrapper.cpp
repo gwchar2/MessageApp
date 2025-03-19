@@ -18,7 +18,7 @@ AESWrapper::AESWrapper() : _key(GenerateKey()) {}
  */
 AESWrapper::AESWrapper(const std::string& key) {
     if (key.size() != DEFAULT_KEYLENGTH) 
-        throw std::length_error(getPlaceHolder(PlaceHolder::KEY_LENGTH_ERROR));
+        throw std::length_error("Key length must be 16 bytes (128 bits)");
     _key = key;
 }
 

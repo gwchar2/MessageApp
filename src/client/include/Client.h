@@ -100,6 +100,7 @@ class Client {
         void setUserUUID(const std::array<uint8_t, 16>& newUUID);
         void clearUser();                                                                               // Clears the user object (for error on req 110)
         
+
         /* Member list related */
         void setMembers(const std::string& uuid, const std::string& username);                          // Sets the members list (req 120) after response from server
         std::vector<ClientData>& getMembers();                                                          // Returns the members list (req 120)

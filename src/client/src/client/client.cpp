@@ -38,7 +38,7 @@ std::vector<ClientData>& Client::getMembers() {
 /* Gets a name from user, searches in member list and returns value. */
 ClientData& Client::getMember() {
     /* Grab the client ID from list. If List is empty, we need to send request for client list first. */
-    if (members.empty())     throw std::runtime_error(getPlaceHolder(PlaceHolder::MEMBER_LIST_FIRST));
+    if (members.empty())     throw std::runtime_error(YELLOW  "Please request member list first!"  RESET);  
             
     /* We prompt user for target username from client, and check if it exists in the list. */
     std::string member = receiveUsername();
@@ -47,7 +47,7 @@ ClientData& Client::getMember() {
 
     /* If no such user exists, we throw an error */
     if (it == members.end()) {
-        throw std::runtime_error(getPlaceHolder(PlaceHolder::NO_SUCH_USER));
+        throw std::runtime_error(YELLOW  "No such user! Please choose again or refresh the list (Request again)."  RESET);
     }
 
     return *it;
@@ -63,7 +63,7 @@ ClientData& Client::findUser(std::string& useruid) {
     if (it != members.end()) 
        return *it; 
 
-    throw std::runtime_error(getPlaceHolder(PlaceHolder::USR_NOT_FOUND));  
+    throw std::runtime_error(RED  "User not found"  RESET);  
 }
 
 /* Inserts a member to the member list */
@@ -82,7 +82,7 @@ void Client::connectToServer() {
     boost::asio::ip::tcp::resolver::results_type endpoints = resolver.resolve(server_ip, std::to_string(server_port));
 
     boost::asio::connect(socket, endpoints);
-    std::cout << getPlaceHolder(PlaceHolder::CNCTED_ADDR) << server_ip << ":" << server_port << std::endl; 
+    std::cout << RED  "[CONNECTED] "  RESET "to " << server_ip << ":" << server_port << std::endl; 
 }
 
 /* Sends a message to the server */
@@ -105,7 +105,7 @@ std::vector<unsigned char> Client::receiveMessage(size_t size) {
         size_t bytes_read = socket.read_some(boost::asio::buffer(buffer.data() + total_bytes_read, size - total_bytes_read));
 
         if (bytes_read == 0) 
-            throw std::runtime_error(getPlaceHolder(PlaceHolder::SERVER_DISCONNECTED));
+            throw std::runtime_error(RED "Server disconnected. Exiting client." RESET);
         total_bytes_read += bytes_read;
     }
 
@@ -120,7 +120,7 @@ std::vector<unsigned char> Client::receiveMessage(size_t size) {
 /* Closes the connection */
 void Client::closeConnection() {
     socket.close();
-    std::cout << getPlaceHolder(PlaceHolder::DSCNCTED_FROM_SERVER) << std::endl;
+    std::cout << YELLOW  "[DISCONNECTED] from server."  RESET << std::endl;
 }
 
 /* Handles the interaction on the client! */

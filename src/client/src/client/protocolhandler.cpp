@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <limits>
 #include <fstream>
+#include <windows.h>
 
 /* Parses the new request header correctly, while turning the payloadsize and requestop to little endian */
 void ProtocolManager::setRequestHeader(std::array<uint8_t,16> clientID, uint8_t version, uint16_t requestOp){
@@ -109,7 +110,7 @@ void ProtocolManager::messageHandler(int choice, Client* client){
         /* Register request */
         case 110:{
             /* We make sure user is not signed in, else he cant re-register, and we set the op. */
-            if (client -> getUser().has_value())    throw std::runtime_error(getPlaceHolder(PlaceHolder::USER_SIGNED_IN));
+            if (client -> getUser().has_value()) throw std::runtime_error(YELLOW "Invalid option, you are already signed in!" RESET);
             uint16_t op = static_cast<uint16_t>(RequestOp::REQ_REGISTER);
             // If want to send to new func, can do newFunc(*client) , and than void newFunc(Client& client), and we will use client.getUser() for example.
             
@@ -131,8 +132,8 @@ void ProtocolManager::messageHandler(int choice, Client* client){
         }
         /* User List Request */
         case 120:{
-            if (!(client -> getUser().has_value()))    throw std::runtime_error(getPlaceHolder(PlaceHolder::USER_SIGNED_IN));
-            if (!(client -> getMembers()).empty())  throw std::runtime_error(getPlaceHolder(PlaceHolder::CLIENT_LIST_REFRESH));
+            if (!(client -> getUser().has_value()))    throw std::runtime_error(YELLOW "Invalid option, you are already signed in!" RESET);
+            if (!(client -> getMembers()).empty())  throw std::runtime_error(YELLOW "To refresh client list, please re-log" RESET);
             uint16_t op = static_cast<uint16_t>(RequestOp::REQ_USER_LIST);
 
             /* make a header, there is no payload */
@@ -145,7 +146,7 @@ void ProtocolManager::messageHandler(int choice, Client* client){
         }
         /* Public Key Request */
         case 130:{
-            if (!(client -> getUser().has_value()))    throw std::runtime_error(getPlaceHolder(PlaceHolder::USER_SIGNED_IN));
+            if (!(client -> getUser().has_value()))    throw std::runtime_error(YELLOW" Invalid option, you are already signed in!" RESET);
             uint16_t op = static_cast<uint16_t>(RequestOp::REQ_PUBLIC_KEY);
             
             
@@ -164,8 +165,8 @@ void ProtocolManager::messageHandler(int choice, Client* client){
         }
         /* Pull Awaiting Messages request */
         case 140:{
-            if (!(client -> getUser().has_value()))    throw std::runtime_error(getPlaceHolder(PlaceHolder::USER_SIGNED_IN));
-            if ((client -> getMembers()).empty())   throw std::runtime_error(getPlaceHolder(PlaceHolder::MEMBER_LIST_FIRST));
+            if (!(client -> getUser().has_value()))    throw std::runtime_error(YELLOW" Invalid option, you are already signed in!" RESET);
+            if ((client -> getMembers()).empty())   throw std::runtime_error(YELLOW  "Please request member list first!" RESET);
             uint16_t op = static_cast<uint16_t>(RequestOp::REQ_AWAITING_MESSAGES);
 
             /* Make the header */
@@ -178,13 +179,13 @@ void ProtocolManager::messageHandler(int choice, Client* client){
         }
         /* Requesting Symmetric Key (type 1) */
         case 151:{
-            if (!(client -> getUser().has_value()))    throw std::runtime_error(getPlaceHolder(PlaceHolder::USER_SIGNED_IN));
+            if (!(client -> getUser().has_value()))    throw std::runtime_error(YELLOW "Invalid option, you are already signed in!" RESET);
             uint16_t op = static_cast<uint16_t>(RequestOp::REQ_SEND_MSG_TO_USR);
             uint8_t type = static_cast<uint8_t>(MessageType::REQ_SYMMETRIC_KEY);
 
             /* Get target username from client & message */
             ClientData& it = client -> getMember();
-            if (!it.getRSAPublicWrapper().has_value())   throw std::runtime_error(getPlaceHolder(PlaceHolder::REQ_PUBLIC_KEY_FIRST,it.getUsername()));
+            if (!it.getRSAPublicWrapper().has_value())   throw std::runtime_error((YELLOW "Please request a public key for " RESET )+it.getUsername());
 
             /* Fix header */
             setRequestHeader(client -> getUser().value().getUUID(),2,op);
@@ -195,14 +196,14 @@ void ProtocolManager::messageHandler(int choice, Client* client){
         }
         /* Sending Symmetric Key (type 2)  */
         case 152:{
-            if (!(client -> getUser().has_value()))    throw std::runtime_error(getPlaceHolder(PlaceHolder::USER_SIGNED_IN));
+            if (!(client -> getUser().has_value()))    throw std::runtime_error(YELLOW "Invalid option, you are already signed in!" RESET);
             uint16_t op = static_cast<uint16_t>(RequestOp::REQ_SEND_MSG_TO_USR);
             uint8_t type = static_cast<uint8_t>(MessageType::SEND_SYMMETRIC_KEY);
 
             /* Finds user in list, checks for public key, saves a symmetric. */
             ClientData& it = client -> getMember();
-            if (!it.getRSAPublicWrapper().has_value()) throw std::runtime_error(getPlaceHolder(PlaceHolder::REQ_PUBLIC_KEY_FIRST,it.getUsername()));
-            if (!it.getRequested()) throw std::runtime_error(getPlaceHolder(PlaceHolder::DID_NOT_REQ_SYMMETRIC,it.getUsername()));
+            if (!it.getRSAPublicWrapper().has_value()) throw std::runtime_error(YELLOW "Please request a public key for " RESET+ it.getUsername());
+            if (!it.getRequested()) throw std::runtime_error((YELLOW "User " RESET)+(it.getUsername())+ (YELLOW " Did not request a symmetric key!"));
             it.setNewSymmetric();
 
             /* Encrypt the key */
@@ -218,48 +219,48 @@ void ProtocolManager::messageHandler(int choice, Client* client){
         }
         /* Sending text message (type 3) */
         case 150:{
-            if (!(client -> getUser().has_value()))    throw std::runtime_error(getPlaceHolder(PlaceHolder::USER_SIGNED_IN));
+            if (!(client -> getUser().has_value()))    throw std::runtime_error(YELLOW "Invalid option, you are already signed in!" RESET);
             uint16_t op = static_cast<uint16_t>(RequestOp::REQ_SEND_MSG_TO_USR);
             uint8_t type = static_cast<uint8_t>(MessageType::SEND_TEXT_MSG);
             
             /* Get target username from client & message */
             ClientData& it = client -> getMember();
-            if (!it.getAESWrapper().has_value())   throw std::runtime_error(getPlaceHolder(PlaceHolder::REQ_SYMMETRIC_FIRST,it.getUsername()));
+            if (!it.getAESWrapper().has_value())   throw std::runtime_error(YELLOW  "Request a symmetrical key first for user "  RESET + it.getUsername());
 
             std::string message;
-            std::cout << getPlaceHolder(PlaceHolder::ENTER_MSG) << std::endl;
+            std::cout << RED  "Enter message: "  RESET << std::endl;
             std::getline(std::cin, message);
-            if (message.size() >= std::numeric_limits<uint32_t>::max()-21)  throw std::runtime_error(getPlaceHolder(PlaceHolder::MSG_TO_LONG));
+            if (message.size() >= std::numeric_limits<uint32_t>::max()-21)  throw std::runtime_error(RED  "Message is to long! Shorten it."  RESET);
             
             /* Encrypt the message */
             std::string encryptedMsg = it.getAESWrapper().value().encrypt(message);
 
             /* Construct request header, payload header and content */
             setRequestHeader(client -> getUser().value().getUUID(),2,op);
-            setMessageHeader(it.getUUID(),type,message.size());
+            setMessageHeader(it.getUUID(),type,encryptedMsg.size());
             payload.insert(payload.end(),encryptedMsg.begin(), encryptedMsg.end());             // Content
             setPayloadSize(payload.size());
             break;
         }
         /* Sending File  (type 4) */
         case 153:{
-            if (!(client -> getUser().has_value()))    throw std::runtime_error(getPlaceHolder(PlaceHolder::USER_SIGNED_IN));
+            if (!(client -> getUser().has_value()))    throw std::runtime_error(YELLOW "Invalid option, you are already signed in!" RESET);
             uint16_t op = static_cast<uint16_t>(RequestOp::REQ_SEND_MSG_TO_USR);
             uint8_t type = static_cast<uint8_t>(MessageType::SEND_FILE);
 
             /* Get target username from client */
             ClientData& it = client -> getMember();
-            if (!it.getAESWrapper().has_value())  if (!it.getAESWrapper().has_value())   throw std::runtime_error("Request a symmetrical key first for user "+it.getUsername());
+            if (!it.getAESWrapper().has_value())  if (!it.getAESWrapper().has_value())   throw std::runtime_error( YELLOW  "Request a symmetrical key first for user "  RESET+it.getUsername());
 
             /* Get file path from user */
-            std::cout << getPlaceHolder(PlaceHolder::ENTER_FILE_PATH) << std::endl;
+            std::cout << RED  "Enter complete file path: "  RESET << std::endl;
             std::string file_path;
             std::getline(std::cin, file_path);
             std::ifstream file(file_path,std::ios::binary);
 
-            /* Check the path & the size of the file! */
-            if (!file)  throw std::runtime_error(getPlaceHolder(PlaceHolder::FILE_NOT_FOUND));
-            if (std::filesystem::file_size(file_path) >= std::numeric_limits<uint32_t>::max()-21) throw std::runtime_error("File is to big! Please choose a different file.");
+            /* Check the path & the size of the file! , 21 is size of message header */
+            if (!file)  throw std::runtime_error(RED  "File Not found!"  RESET);
+            if (std::filesystem::file_size(file_path) >= std::numeric_limits<uint32_t>::max()-21) throw std::runtime_error(RED  "File is to big! Please choose a different file."  RESET);
             
             /* Parse the data to a string and encrypt */
             std::string data(std::filesystem::file_size(file_path),'\0');
@@ -269,7 +270,7 @@ void ProtocolManager::messageHandler(int choice, Client* client){
 
             /* Create the headers */
             setRequestHeader(client -> getUser().value().getUUID(),2,op);
-            setMessageHeader(it.getUUID(),type,std::filesystem::file_size(file_path));
+            setMessageHeader(it.getUUID(),type,encryptedData.size());
             payload.insert(payload.end(), encryptedData.begin(), encryptedData.end());
             setPayloadSize(payload.size());
             break;
@@ -280,7 +281,7 @@ void ProtocolManager::messageHandler(int choice, Client* client){
             exit(1);
             break;
         default:
-            throw std::runtime_error(getPlaceHolder(PlaceHolder::ERR_CHOOSING_OPTION));
+            throw std::runtime_error(RED  "Error choosing option, try again."  RESET);
     }
 
 }
@@ -306,7 +307,7 @@ void ProtocolManager::responseHandler(Client* client){
         case ResponseOp::RESP_REGISTER_SUCCESSFULL:{
             /* Open the me.info file */
             std::ofstream file("me.info");
-            if (!file)  throw std::runtime_error(getPlaceHolder(PlaceHolder::CANT_OPEN_FILE));
+            if (!file)  throw std::runtime_error(RED  "Could not open the requested file!"  RESET);
 
             /* First row: username*/
             file << client -> getUser().value().getName() << std::endl;
@@ -340,9 +341,9 @@ void ProtocolManager::responseHandler(Client* client){
             /* If the payload size does not divide by 255+16 without a remainder, it means we got to much or to less data,
              and the data is missing or extra, therefor the database is corrupted!! (For ex: Username without UUID!!)*/
 
-            if (payload.size() == 0)    throw std::runtime_error(getPlaceHolder(PlaceHolder::NO_MORE_MEMBERS));
+            if (payload.size() == 0)    throw std::runtime_error(YELLOW  "There are no other members!"  RESET);
             else if (payload.size() % INFO_SIZE != 0)
-                throw std::runtime_error(getPlaceHolder(PlaceHolder::INVALID_PAYLOAD));
+                throw std::runtime_error(RED  "Invalid payload size, the database is probably corrupted!"  RESET);
             
             /* We reserve number of users amount of room in the members vector & clear old data  */
             size_t numberOfUsers = payload.size() / INFO_SIZE;
@@ -379,21 +380,20 @@ void ProtocolManager::responseHandler(Client* client){
             std::string pubKey(payload.begin()+UUID_SIZE, payload.end());
             user.setPublic(pubKey);
 
-            std::cout << getPlaceHolder(PlaceHolder::PUB_KEY_RECEIVED,user.getUsername()) << std::endl;
+            std::cout << YELLOW  "Public key received for: "  RESET << user.getUsername() << YELLOW  ". You can now send him a symmetric key (If he asked for one)."  RESET << std::endl;
             break;
         }
         /* Just prints message to user regarding success */
         case ResponseOp::RESP_MSG_SENT_TO_USER:{
             constexpr size_t UUID_SIZE = 16;
             std::string UUID = binaryToStr(payload,UUID_SIZE);
-
-            std::cout << getPlaceHolder(PlaceHolder::SENT_MSG_SUCCESS,(client -> findUser(UUID)).getUsername()) << std::endl;
+            std::cout << YELLOW  "Sent message successfully to "  RESET << (client -> findUser(UUID)).getUsername() << std::endl;
             break;
         }
         /* Handles receiving awaiting messages list, including prompting user & parsing data */
         case ResponseOp::RESP_AWAITING_MESSAGES: {
             if (payload.size() == 0) {
-                std::cout << getPlaceHolder(PlaceHolder::NO_WAITING_MSGS,client -> getUser().value().getName()) << std::endl;
+                std::cout << YELLOW  "No waiting messages for "  RESET << client -> getUser().value().getName() << std::endl;
                 break;
             }
             constexpr size_t UUID_SIZE = 16;
@@ -404,7 +404,7 @@ void ProtocolManager::responseHandler(Client* client){
             size_t totalSize = payload.size();
             while (offset < totalSize){
                 if (offset + UUID_SIZE + MSG_ID + MSG_TYPE + MSG_SIZE > totalSize) {
-                    std::cerr << getPlaceHolder(PlaceHolder::INCMPLT_MSG) << std::endl;
+                    std::cerr << YELLOW  "Incomplete message"  RESET << std::endl;
                     break;
                 }  
 
@@ -429,7 +429,7 @@ void ProtocolManager::responseHandler(Client* client){
                 std::string stringcontent = binaryToStr(content, msgSize);
                 offset += msgSize;
                 
-                std::cout << getPlaceHolder(PlaceHolder::FROM,(client -> findUser(stringID)).getUsername()) << std::endl;
+                std::cout << RED  "FROM:\t"  RESET << (client -> findUser(stringID)).getUsername() << std::endl;
 
                 switch(msgType){
                     /* Request for symmetric key */
@@ -446,28 +446,54 @@ void ProtocolManager::responseHandler(Client* client){
                         /* Finding the target user */
                         ClientData& user = client -> findUser(stringID);
                         /* Decrypting the encrypted key */
-                        std::string decrpytedkey = client -> getUser().value().getDecryptor().value().decrypt(std::string(content.begin(), content.end()));
-                        /* Saving it for specific user */
-                        user.setSymmetric(decrpytedkey);
-                        /* Print response */
-                        stringcontent = "Received symmetric key.";
-                        break;}
+                        try{
+                            std::string decrpytedkey = client -> getUser().value().getDecryptor().value().decrypt(std::string(content.begin(), content.end()));
+                            /* Saving it for specific user */
+                            user.setSymmetric(decrpytedkey);
+                            /* Print response */
+                            stringcontent = "Received symmetric key.";
+                        }catch (const std::exception& e){
+                            stringcontent = "Can't decrypt message";
+                        }
+                        break;
+                    }
                     /*Text msg */
                     case 3:{
                         /* Finding the target user */
                         ClientData& user = client -> findUser(stringID);
                         if (!user.getAESWrapper().has_value())  stringcontent="Can't decrypt message.";
                         /* Decrypting the encrypted key */
-                        else stringcontent = user.getAESWrapper().value().decrypt(std::string(content.begin(), content.end()));
-                        break;}
-                    /* File received */
-                    case 4:
+                        else {
+                            try{
+                                stringcontent = user.getAESWrapper().value().decrypt(std::string(content.begin(), content.end()));
+                            }catch (const std::exception& e){
+                                stringcontent= "Can't decrypt message.";
+                            }
+                        }
                         break;
+                    }
+                    /* File received */
+                    case 4:{
+                        /* Finding the target user */
+                        ClientData& user = client -> findUser(stringID);
+                        if (!user.getAESWrapper().has_value())  stringcontent="Can't decrypt message.";
+                        
+                        /* Decrypting the encrypted key */
+                        else {
+                            try{
+                                stringcontent = user.getAESWrapper().value().decrypt(std::string(content.begin(), content.end()));
+                                /* Write to file, and return the directory. */
+                                stringcontent = "File saved to "+saveToTemp(stringcontent);
+                            }catch (const std::exception& e){
+                                stringcontent= "Can't decrypt message.";
+                            }
+                        }
+                        break;
+                    }
                     default:
                         break;
                 }
-
-                std::cout << "CONTENT: " << stringcontent << std::endl;
+                std::cout << RED "CONTENT: "RESET << stringcontent << std::endl;
                 std::cout << "----------------------------------------------------------" << std::endl;
             }
             break;
@@ -478,7 +504,7 @@ void ProtocolManager::responseHandler(Client* client){
         /* If we get an error, and the request was to register, we need to clear the username field so we can request it again */
             if (requestHeader.requestOp == static_cast<uint16_t>(RequestOp::REQ_REGISTER) && client -> getUser().has_value())
                 client -> clearUser();
-            else throw std::runtime_error(getPlaceHolder(PlaceHolder::GEN_ERROR));}
+            else throw std::runtime_error(RED "General Error received, please try again!"  RESET);}
     
     }
 

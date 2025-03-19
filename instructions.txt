@@ -12,7 +12,7 @@ Server action:
 
 Client action:
 1) Reads server and port from server.info
-2) Saves and reads his Username + UUID + Encryption Key from file my.info
+2) Saves and reads his Username + UUID + Encryption Key from file me.info
 3) Client shows user the following option in console and waits for actions :
     -- If there is error from server, there will be a message : "Server responded with an error" and client will wait for next user input.
 4) Shows the user terminal, where user can choose his next action.
@@ -31,7 +31,7 @@ User Terminal:
 Every first time user signs up with username (max 255 bytes) and transfers public key.
 The server will than return to user his UUID or an error if username already exists in database.
 
-
+Protocol Specifics:
 Requests from server:
     1. client can request the file of all other users.
     2. client can request public key of certain user.
@@ -51,7 +51,6 @@ Now A & B both hold the symmetric key.
 
 
 Requests from client to server:
-Has specific header - check file.
 
 Request 600 - sign up
 Request 601 - members list 
@@ -60,18 +59,18 @@ Request 603 - Sending message to user.
 Request 604 - Pull waiting messages.
 
 User can send different message types to other users: (603)
-    Type 1 - symmetric key request.
-    Type 2 - sending user B my own symmetric key.
-    Type 3 - text message
-    Type 4 - file (bonus)
+    Type 1 - send symmetric key request.
+    Type 2 - send user B my own symmetric key.
+    Type 3 - send text message
+    Type 4 - send file
 
 Responses from server:
 Has specific header, of course.
 Response 2100 - Sign up successfull
-Response 2101 - User list
+Response 2101 - Members list
 Response 2102 - Public key
 Response 2103 - Message to user was sent succesfully (kept on server, not necessarily read)
-Response 2104 - Pull "waiting messages"
+Response 2104 - All "waiting messages"
 Response 9000 - General error
 
 

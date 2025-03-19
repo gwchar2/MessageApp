@@ -192,10 +192,10 @@ CREATE TABLE IF NOT EXISTS messages (
 Below are diagrams that illustrate the message exchange process:
 
 ### Client A, Client B, and Server Communication Flow
-![Client Communication Process](./images/client_communication.jpg)
+![Client Communication Process](https://raw.githubusercontent.com/gwchar2/MessageApp/tree/main/images/client_communication.jpg)
 
 ### End-to-End Encryption Process
-![Encryption Flow](./images/encryption_diagram.jpg)
+![Encryption Flow](https://raw.githubusercontent.com/gwchar2/MessageApp/tree/main/images/encryption_diagram.jpg)
 
 ## License
 This project is licensed under the MIT License.

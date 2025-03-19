@@ -59,17 +59,50 @@ MessageApp is a client-server-based secure messaging system. It uses **RSA (asym
 ```
 
 ## Installation
-1. Clone the repository:
-   ```sh
-   git clone https://github.com/yourusername/MessageApp.git
-   cd MessageApp
-   ```
-2. Install required dependencies (for server-side Python components):
-   ```sh
-   pip install -r requirements.txt
-   ```
-3. Compile the client and encryption modules (if needed).
+### 1. Clone the Repository
+```sh
+git clone https://github.com/gwchar2/MessageApp.git
+cd MessageApp
+```
 
+### 2. Ensure Python is Installed and Install Dependencies
+- Check if Python is installed:
+  ```sh
+  python3 --version
+  ```
+  If Python is not installed, download and install it from [python.org](https://www.python.org/downloads/).
+
+- Install required dependencies:
+  ```sh
+  python3 -m pip install --upgrade pip
+  python3 -m pip install -r requirements.txt
+  ```
+
+### 3. Ensure GCC is Installed and Compile the Client & Encryption Modules
+- Check if GCC is installed:
+  ```sh
+  gcc --version
+  ```
+  If GCC is not installed, install it:
+  - **Linux (Debian/Ubuntu):** `sudo apt install build-essential`
+  - **MacOS:** `brew install gcc`
+  - **Windows:** Install [MinGW](https://osdn.net/projects/mingw/) and add it to the system PATH.
+
+- Compile the modules:
+  ```sh
+  make
+  ```
+
+### 4. Start the Server and Client
+- Start the server:
+  ```sh
+  python src/server/server.py
+  ```
+- Start the client:
+  ```sh
+  ./client
+  ```
+  
 ## Usage
 
 ### Server Actions
@@ -159,10 +192,10 @@ CREATE TABLE IF NOT EXISTS messages (
 Below are diagrams that illustrate the message exchange process:
 
 ### Client A, Client B, and Server Communication Flow
-![Client Communication Process](images/client_communication.jpg)
+![Client Communication Process](./images/client_communication.jpg)
 
 ### End-to-End Encryption Process
-![Encryption Flow](images/encryption_diagram.jpg)
+![Encryption Flow](./images/encryption_diagram.jpg)
 
 ## License
 This project is licensed under the MIT License.

@@ -6,7 +6,7 @@
 std::pair<std::string, int> getServerInfo() {
     std::ifstream file("server.info");
     if (!file.is_open()) {
-        throw std::runtime_error("[ERROR] Could not open server.info");
+        throw std::runtime_error(getPlaceHolder(PlaceHolder::CANT_OPEN_SERVER_INFO));
     }
 
     std::string line;
@@ -18,18 +18,17 @@ std::pair<std::string, int> getServerInfo() {
     int port;
 
     if (!std::getline(ss, ip, ':') || !std::getline(ss, port_str)) {
-        throw std::runtime_error("[ERROR] Invalid format in server.info");
+        throw std::runtime_error(getPlaceHolder(PlaceHolder::INVALID_SERVER_FORMAT));
     }
 
     try {
         port = std::stoi(port_str);
     } catch (const std::exception&) {
-        throw std::runtime_error("[ERROR] Port is not a valid number");
+        throw std::runtime_error(getPlaceHolder(PlaceHolder::INVALID_PORT));
     }
 
     return {ip, port};
 }
-
 
 /* Reads user data from my.info */
 std::vector<std::string> getUserInfo() {
@@ -59,37 +58,12 @@ std::vector<std::string> getUserInfo() {
     return user_info;
 }
 
-/* Prints a string in its hexadecimal representation */
-void hexify(const std::string& input) {
-    std::ios::fmtflags f(std::cout.flags());  // Save current output formatting
-    std::cout << std::hex;
-
-    for (size_t i = 0; i < input.size(); i++) {
-        std::cout << std::setfill('0') << std::setw(2)
-                  << (0xFF & static_cast<unsigned char>(input[i]))  // Ensure correct byte interpretation
-                  << (((i + 1) % 16 == 0) ? "\n" : " ");
-    }
-
-    std::cout << std::endl;
-    std::cout.flags(f);  // Restore original formatting
-}
-
-
-/* Converts std::vector<char> to std::string */
-std::string vectorToString(const std::vector<unsigned char>& vec) {
-    return std::string(vec.begin(), vec.end());
-}
-
-/* Converts std::string to std::vector<char> */
-std::vector<unsigned char> stringToVector(const std::string& str) {
-    return std::vector<unsigned char>(str.begin(), str.end());
-}
-
+/* Prints opening message to user */
 int openingMessage(Client* client){
     
     if (client -> getUser().has_value()){
         std::cout << "\nMessageU Client at your service. \n" 
-                  << "Welcome back " << client -> getUser().value().getName() + "!" << std::endl;
+                  << "Welcome back " << YELLOW << client -> getUser().value().getName() + "!" << RESET << std::endl;
     }
     else std::cout << "\nMessageU Client at your service." << std::endl;
 
@@ -109,7 +83,7 @@ int openingMessage(Client* client){
     while (true){
         if (std::cin >> choice) break;
         else {
-            std::cout << "\n \033[31m  Invalid input, please enter a valid number!  \033[0m \n" << std::endl;
+            std::cout << getPlaceHolder(PlaceHolder::INVALID_INPUT) << std::endl;
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
@@ -118,18 +92,25 @@ int openingMessage(Client* client){
     return choice;
 }
 
-
+/* Receives username input from user*/
 std::string receiveUsername(){
     /* Request username */
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');                 // Clear the last input 
-    std::cout << "Please enter a username, up to 254 characters long." << std::endl;    // Prompt
+    std::cout << getPlaceHolder(PlaceHolder::ENTER_USRNM) << std::endl;    // Prompt
     std::string username;                   // Username holder
-    std::getline(std::cin, username);       // Support 'spaces'
+    std::getline(std::cin, username);       // Supports 'spaces'
 
     /* If username is longer than 254 bytes + 1 for null terminator, we throw error */
-    if (username.size() > MAX_USERNAME_SIZE)    throw std::runtime_error("Username to long, please enter again!");
+    if (username.size() > MAX_USERNAME_SIZE)    throw std::runtime_error(getPlaceHolder(PlaceHolder::USRNM_TO_LONG));
 
     return username;
 }
 
-
+/* Turns a binary vector to string representation for pretty printing */
+std::string binaryToStr(std::vector<unsigned char> data, const size_t size){
+    std::ostringstream oss;
+    for (auto it = data.begin(); it != data.begin() + size; it++) {
+        oss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(*it);
+    }
+    return oss.str();
+}

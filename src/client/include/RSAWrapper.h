@@ -30,12 +30,12 @@ std::cout << "Decrypted Message: " << decryptedMessage << std::endl;
 
 class RSAPublicWrapper{
 	public:
-		static const unsigned int KEYSIZE = 160;
-		static const unsigned int BITS = 1024;
-		RSAPublicWrapper(const std::string& key);					// Loads an existing public key from a string.
-		RSAPublicWrapper() = default;
-		std::string getPublicKey() const;							// Returns the public key as a string.
-		std::string encrypt(const std::string& plain);				// Encrypts plaintext using the public key
+		static const unsigned int KEYSIZE = 160;									
+		static const unsigned int BITS = 1024;		
+		RSAPublicWrapper() = default;												// Default constructor so that we can make a members list without public keys								
+		RSAPublicWrapper(const std::string& key);									// Loads an existing public key from a string.
+		std::string getPublicKey() const;											// Returns the public key as a string.
+		std::string encrypt(const std::string& plain);								// Encrypts plaintext using the public key
 		RSAPublicWrapper& operator=(const RSAPublicWrapper& rsaprivate);			// Deep copy for operator = mostly for User class
 
 	private:
@@ -48,25 +48,26 @@ class RSAPublicWrapper{
 class RSAPrivateWrapper{
 	public:
 		static const unsigned int BITS = 1024;
-		RSAPrivateWrapper();											// Generates a new RSA key pair (both private and public keys)
-		RSAPrivateWrapper(const std::string& key);						// Loads an existing private key
-		std::string getPrivateKey() const;								// Returns the private key as a string (should be encoded in Base64 before storing)
-		std::string getPublicKey() const;								// Extracts the public key from the private key
-		std::string decrypt(const std::string& cipher);					// Decrypts a message encrypted with the corresponding public key
+		RSAPrivateWrapper();														// Generates a new RSA key pair (both private and public keys)
+		RSAPrivateWrapper(const std::string& key);									// Loads an existing private key
+		std::string getPrivateKey() const;											// Returns the private key as a string (should be encoded in Base64 before storing)
+		std::string getPublicKey() const;											// Extracts the public key from the private key
+		std::string decrypt(std::string cipher) const;								// Decrypts a message encrypted with the corresponding public key
 
 
 		RSAPrivateWrapper& operator=(const RSAPrivateWrapper& rsaprivate);			// Makes a deep copy of the private wrapper (Mostly for user class)
 
 	private:
-		CryptoPP::AutoSeededRandomPool _rng;
+		mutable CryptoPP::AutoSeededRandomPool _rng;								// Mutable so it can be changed in constant values. 
+																					//Needs to be mutable since the entire chain client -> getUser() getDecryptor() decrypt() is const.
 		CryptoPP::RSA::PrivateKey _privateKey;
 
 };
 
 class Base64Wrapper{
 	public:
-		static std::string encode(const std::string& str);			// Encodes to base 64
-		static std::string decode(const std::string& str);			// Decodes from base 64
+		static std::string encode(const std::string& str);							// Encodes to base 64
+		static std::string decode(const std::string& str);							// Decodes from base 64
 };
 
 

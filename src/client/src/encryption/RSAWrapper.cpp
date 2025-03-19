@@ -4,11 +4,13 @@
 /******* RSA PUBLIC KEY *******/
 /*******************************/
 
+/* Public key constructor from an existing public key (from server) */
 RSAPublicWrapper::RSAPublicWrapper(const std::string& key){
 	CryptoPP::StringSource ss(key, true);
 	_publicKey.Load(ss);
 }
 
+/* Public key empty constructor */
 std::string RSAPublicWrapper::getPublicKey() const{
 	std::string key;
 	CryptoPP::StringSink ss(key);
@@ -16,6 +18,7 @@ std::string RSAPublicWrapper::getPublicKey() const{
 	return key;
 }
 
+/* Encrypts according to a given public key */
 std::string RSAPublicWrapper::encrypt(const std::string& plain){
 	std::string cipher;
 	CryptoPP::RSAES_OAEP_SHA_Encryptor e(_publicKey);
@@ -34,16 +37,18 @@ RSAPublicWrapper& RSAPublicWrapper::operator=(const RSAPublicWrapper& rsapublic)
 /******* RSA PRIVATE KEY *******/
 /*******************************/
 
+/* Initializes a new private key */
 RSAPrivateWrapper::RSAPrivateWrapper(){
 	_privateKey.Initialize(_rng, BITS);
 }
 
-
+/* Private key constructor according to existing key (file) */
 RSAPrivateWrapper::RSAPrivateWrapper(const std::string& key){
 	CryptoPP::StringSource ss(key, true);
 	_privateKey.Load(ss);
 }
 
+/* Gets a private key */
 std::string RSAPrivateWrapper::getPrivateKey() const{	
 	std::string key;
 	CryptoPP::StringSink ss(key);
@@ -51,7 +56,7 @@ std::string RSAPrivateWrapper::getPrivateKey() const{
 	return key;
 }
 
-
+/* Gets a public key according to the existing private key */
 std::string RSAPrivateWrapper::getPublicKey() const{
 	CryptoPP::RSAFunction publicKey(_privateKey);
 	std::string key;
@@ -60,8 +65,8 @@ std::string RSAPrivateWrapper::getPublicKey() const{
 	return key;
 }
 
-
-std::string RSAPrivateWrapper::decrypt(const std::string& cipher){
+/* Decrpyts according to private key */
+std::string RSAPrivateWrapper::decrypt(std::string cipher) const{
 	std::string decrypted;
 	CryptoPP::RSAES_OAEP_SHA_Decryptor d(_privateKey);
 	CryptoPP::StringSource ss_cipher(cipher, true, new CryptoPP::PK_DecryptorFilter(_rng, d, new CryptoPP::StringSink(decrypted)));

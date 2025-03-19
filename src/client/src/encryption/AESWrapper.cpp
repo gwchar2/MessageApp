@@ -1,9 +1,8 @@
 #include "../../include/AESWrapper.h"
-
+#include "../../include/Helpers.h"
 #include <modes.h>
 #include <aes.h>
 #include <filters.h>
-
 #include <stdexcept>
 #include <immintrin.h>	// _rdrand32_step
 
@@ -19,7 +18,7 @@ AESWrapper::AESWrapper() : _key(GenerateKey()) {}
  */
 AESWrapper::AESWrapper(const std::string& key) {
     if (key.size() != DEFAULT_KEYLENGTH) 
-        throw std::length_error("Key length must be 16 bytes (128 bits)");
+        throw std::length_error(getPlaceHolder(PlaceHolder::KEY_LENGTH_ERROR));
     _key = key;
 }
 

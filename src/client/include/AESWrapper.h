@@ -27,16 +27,16 @@
 
 class AESWrapper{
 	public:
-		static const unsigned int DEFAULT_KEYLENGTH = 16;					// 128-bit AES key
-		AESWrapper();														// Constructor with new key
-		AESWrapper(const std::string& key);									// Constructor with existing key
+		static const unsigned int DEFAULT_KEYLENGTH = 16;							// 128-bit AES key
+		AESWrapper();																// Constructor with new key
+		AESWrapper(const std::string& key);											// Constructor with existing key
 
-		static std::string GenerateKey();									// Generates a random AES key of specified length and stores it in buffer
-		const std::string& getKey() const;									// Retrieves the AES key
+		static std::string GenerateKey();											// Generates a random AES key of specified length and stores it in buffer
+		const std::string& getKey() const;											// Retrieves the AES key
 
 		std::string encrypt(const std::string& plain) const;						// Encrypts plaintext and returns the ciphertext
 		std::string decrypt(const std::string& cipher) const;						// Decrypts ciphertext and returns the plaintext
 		
 	private:
-		std::string _key;													// AES key storage
+		std::string _key;															// AES key storage
 };

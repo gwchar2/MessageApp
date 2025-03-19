@@ -1,4 +1,6 @@
 import sqlite3
+import struct
+from datetime import datetime
 
 # Initializes the database 
 def initialize_database():
@@ -22,7 +24,7 @@ def initialize_database():
                 ToClient BLOB(16) NOT NULL,
                 FromClient BLOB(16) NOT NULL,
                 Type TINYINT NOT NULL,
-                Content BLOB NOT NULL,
+                Content BLOB,
                 FOREIGN KEY (ToClient) REFERENCES clients(ID),
                 FOREIGN KEY (FromClient) REFERENCES clients(ID)
             )""")
@@ -49,14 +51,20 @@ def register_user(ID: bytes, username: str, publicKey: bytes, lastSeen: str):
             conn.close()
     
 # Sends a message to a client
-def sendMessageToTarget(ToClient: bytes, FromClient: bytes, Type : bytes, Content : bytes = None):
+def sendMessageToTarget(ToClient: bytes, FromClient: bytes, Type : int, Content : bytes = None):
     conn = None
     try:
         conn = sqlite3.connect("defensive.db")
         cursor = conn.cursor()
 
-        cursor.execute("INSERT INTO messages (ToClient, FromClient, Type, Content) VALUES (?, ?, ?, ?)",
-             (ToClient, FromClient, Type, Content))
+        if Content is None:
+            Content = b''
+            cursor.execute("INSERT INTO messages (ToClient, FromClient, Type, Content) VALUES (?, ?, ?, ?)",
+                (ToClient, FromClient, Type, Content))
+        else:
+            cursor.execute("INSERT INTO messages (ToClient, FromClient, Type, Content) VALUES (?, ?, ?, ?)",
+                (ToClient, FromClient, Type, Content))
+
 
         if cursor.rowcount <= 0:
             raise RuntimeError("Insertion failed: No rows were inserted.")
@@ -95,10 +103,8 @@ def getPublicKey(ID: bytes):
     try:
         conn = sqlite3.connect("defensive.db")
         cursor = conn.cursor()
-
         cursor.execute("SELECT PublicKey FROM clients WHERE ID = ?", (ID,))
         result = cursor.fetchone()
-
         conn.close()
         return result[0] if result else None
     except sqlite3.Error as e:
@@ -148,9 +154,14 @@ def getAllUsers(ID: bytes) -> list[tuple[bytes,str]]:
         conn = sqlite3.connect("defensive.db")
         cursor = conn.cursor()
 
-        cursor.execute("SELECT ID, UserName FROM clients WHERE ID != ?",(ID,))
-        users = cursor.fetchall()
+        id_exists, _ = userCheck(ID) 
+        if not id_exists:
+            raise RuntimeError(f"Invalid user ID: {ID.hex()}")
+        
+        username = getUsername(ID)
+        cursor.execute("SELECT ID, UserName FROM clients WHERE ID != ? AND UserName != ?",(ID,username))
 
+        users = cursor.fetchall()
         conn.close()
         return users;
     except sqlite3.Error as e:
@@ -188,3 +199,26 @@ def userCheck(ID: bytes, UserName : str = None) -> tuple[bool,bool | None]:
         if conn:
             conn.close()
 
+def updateLastSeen(ID: bytes):
+    try:
+        conn = sqlite3.connect("defensive.db")
+        cursor = conn.cursor()
+        
+        id_exists, _ = userCheck(ID) 
+        if not id_exists:
+            raise RuntimeError(f"Invalid user ID: {ID.hex()}")
+
+        current_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+        
+
+        cursor.execute("UPDATE clients SET LastSeen = ? WHERE ID = ?", (current_time, ID))
+
+        conn.commit()  # Save changes
+        print(f"Updated LastSeen for Client ID: {ID.hex()}")
+
+    except sqlite3.Error as e:
+        raise RuntimeError(f"Database error: {e}")
+
+    finally:
+        if conn:
+            conn.close() 

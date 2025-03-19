@@ -84,7 +84,8 @@
 			"csignal": "cpp",
 			"source_location": "cpp",
 			"stdfloat": "cpp",
-			"cinttypes": "cpp"
+			"cinttypes": "cpp",
+			"filesystem": "cpp"
 		}
 	}
 }

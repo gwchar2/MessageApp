@@ -50,6 +50,7 @@ struct RequestHeader {
 };
 
 /* A response header */
+/* Pragma so that it will be true value */
 #pragma pack(1)
 struct ResponseHeader {
     uint8_t version;       
@@ -60,30 +61,26 @@ struct ResponseHeader {
 
 class ProtocolManager{
     public: 
-        /* Default constructor, we will combine the pieces one by one */
-        ProtocolManager() = default;
+        ProtocolManager() = default;                                                                            // A defualt constructor so that we can initiate without values
         
-        /* Makes a new header upon request */
-        void setRequestHeader(std::array<uint8_t,16> clientID, uint8_t version, uint16_t requestOp);      
-        void setMessageHeader(std::string target_uuid, uint8_t msg_type, uint32_t content_size);
-        void setPayloadSize(uint32_t payloadSize);
         
-        /* Gets a header */
-        RequestHeader getRequestHeader() const;
-        ResponseHeader getResponseHeader() const;
+        void setRequestHeader(std::array<uint8_t,16> clientID, uint8_t version, uint16_t requestOp);            // Sets a new Request header 
+        void setMessageHeader(std::array<uint8_t, 16> target_uuid, uint8_t msg_type, uint32_t content_size);    // Sets a new Message header
+        void setPayloadSize(uint32_t payloadSize);                                                              // Sets the payload size value
         
-        /* Creates messages or parses responses from server according to data */
-        std::vector<std::vector<unsigned char>> createMessage();
+        RequestHeader getRequestHeader() const;                                                                 // Returns the request header
+        ResponseHeader getResponseHeader() const;                                                               // Returns the response header
 
-        /* Controls the messages and responses sent/received */
-        void messageHandler(int choice,Client* client);                                                                    // switch(message op)
-        void responseHandler(Client* client);                  // switch(response op)
-        void printResponseHeader();
+        std::vector<std::vector<unsigned char>> createMessage();                                                // Creates messages or parses responses from server according to data
+
+        void messageHandler(int choice,Client* client);                                                         // Controls the messages sent
+        void responseHandler(Client* client);                                                                   // Controls the responses received
+        void printResponseHeader();                                                                             // Prints the response header (mainly for debugging)
 
     private:
-        RequestHeader requestHeader;
-        ResponseHeader responseHeader;
-        std::vector<unsigned char> payload;
+        RequestHeader requestHeader;                                            // Request header
+        ResponseHeader responseHeader;                                          // Response header
+        std::vector<unsigned char> payload;                                     // Holds the payload data
         
 };
 

@@ -1,7 +1,5 @@
 #include "../include/Client.h"
-
-
-
+#include "../include/Helpers.h"
 /* Launches the client-server interaction */
 int main() {
     try {
@@ -23,10 +21,11 @@ int main() {
             client.clientService();
         }
         
-        throw std::runtime_error("Server disconnected. Exiting client.");
+        /* If the server is not connected, and we only notice this after the while, throw a runtime error */
+        throw std::runtime_error(getPlaceHolder(PlaceHolder::SERVER_DISCONNECTED));
 
     } catch (const std::exception& e) {
-        std::cerr << "[ERROR] " << e.what() << std::endl;
+        std::cerr << getPlaceHolder(PlaceHolder::PH_ERROR) << e.what() << std::endl;
         
     }
 

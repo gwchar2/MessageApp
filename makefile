@@ -2,7 +2,7 @@
 
 # Compiler settings
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -g -mrdrnd -I "C:/Users/hwath/cryptopp/include" -I src/client/include
+CXXFLAGS = -std=c++17 -Wall -g -mrdrnd -I 
 LDFLAGS = -L "C:/Users/hwath/cryptopp" -lcryptopp -static -lpthread -lws2_32 
 SRC_DIR = src/client/src
 CLIENT_DIR = src/client/src/client

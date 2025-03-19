@@ -2,13 +2,8 @@
 
 # Compiler settings
 CXX = g++
-<<<<<<< HEAD
 CXXFLAGS = -std=c++17 -Wall -g -mrdrnd -I src/client/include
 LDFLAGS = -L -lcryptopp -static -lpthread -lws2_32 
-=======
-CXXFLAGS = -std=c++17 -Wall -g -mrdrnd -I 
-LDFLAGS = -L "C:/Users/hwath/cryptopp" -lcryptopp -static -lpthread -lws2_32 
->>>>>>> e4c683a210f171b5cf47c07656b36cf0b8543c45
 SRC_DIR = src/client/src
 CLIENT_DIR = src/client/src/client
 ENCRYPTION_DIR = src/client/src/encryption

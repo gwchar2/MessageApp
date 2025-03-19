@@ -59,6 +59,7 @@ MessageApp is a client-server-based secure messaging system. It uses **RSA (asym
 ```
 
 ## Installation
+
 ### 1. Clone the Repository
 ```sh
 git clone https://github.com/gwchar2/MessageApp.git
@@ -78,7 +79,26 @@ cd MessageApp
   python3 -m pip install -r requirements.txt
   ```
 
-### 3. Ensure GCC is Installed and Compile the Client & Encryption Modules
+### 3. Install Crypto++ Library
+- **Linux (Debian/Ubuntu):**
+  ```sh
+  sudo apt install libcryptopp-dev
+  ```
+- **MacOS:**
+  ```sh
+  brew install cryptopp
+  ```
+- **Windows:**
+  - Download and install Crypto++ from [Crypto++ official site](https://www.cryptopp.com/).
+  - Ensure the include path is set correctly when compiling.
+  - You might need to add a complete path to cryptopp folder under CXXFLAGS and LDFLAGS in the [makefile](makefile)
+      **Example for makefile addition**
+      ```sh
+      CXXFLAGS = -std=c++17 -Wall -g -mrdrnd -I src/client/include -I "C:/Users/some_path/cryptopp" 
+      LDFLAGS = -L "C:/Users/some_path/cryptopp" -lcryptopp -static -lpthread -lws2_32 
+      ```
+
+### 4. Ensure GCC is Installed and Compile the Client & Encryption Modules
 - Check if GCC is installed:
   ```sh
   gcc --version
@@ -93,10 +113,10 @@ cd MessageApp
   make
   ```
 
-### 4. Start the Server and Client
+### 5. Start the Server and Client
 - Start the server:
   ```sh
-  python src/server/server.py
+  python3 src/server/server.py
   ```
 - Start the client:
   ```sh

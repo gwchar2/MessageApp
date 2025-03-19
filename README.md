@@ -148,7 +148,7 @@ cd MessageApp
 - **Send Message (Request 150)** - Sends a text message.
 - **Request Symmetric Key (Request 151)** - Fetches stored symmetric key.
 - **Send Symmetric Key (Request 152)** - Generates and sends a new symmetric key.
-- **Send a File (Request 153)** - Generates and sends a new symmetric key.
+- **Send a File (Request 153)** - Send a specific user a specific file up to 4gb.
 
 ## Secure Communication Process
 1. **Client B requests Client A’s public key from the server.**

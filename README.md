@@ -91,11 +91,11 @@ cd MessageApp
 - **Windows:**
   - Download and install Crypto++ from [Crypto++ official site](https://www.cryptopp.com/).
   - Ensure the include path is set correctly when compiling.
-  - You might need to add a complete path to cryptopp folder under CXXFLAGS and LDFLAGS in the [makefile](makefile)
+  - You might need to add a complete path to cryptopp folder under CXXFLAGS and LDFLAGS in the [makefile](makefile) or [c_cpp_properties.json](.vscode/c_cpp_properties.json) under "include"
       **Example for makefile addition**
       ```sh
       CXXFLAGS = -std=c++17 -Wall -g -mrdrnd -I src/client/include -I "C:/Users/some_path/cryptopp" 
-      LDFLAGS = -L "C:/Users/some_path/cryptopp" -lcryptopp -static -lpthread -lws2_32 
+      LDFLAGS = -L "C:/Users/some_path/cryptopp" -lcryptopp -static -lpthread -lws2_32 \
       ```
 
 ### 4. Ensure GCC is Installed and Compile the Client & Encryption Modules

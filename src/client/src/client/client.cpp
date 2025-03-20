@@ -46,9 +46,9 @@ ClientData& Client::getMember() {
                 [&](const ClientData& data) { return data.getUsername() == member; });
 
     /* If no such user exists, we throw an error */
-    if (it == members.end()) {
+    if (it == members.end()) 
         throw std::runtime_error(YELLOW  "No such user! Please choose again or refresh the list (Request again)."  RESET);
-    }
+    
 
     return *it;
             
@@ -60,10 +60,10 @@ ClientData& Client::findUser(std::string& useruid) {
         [&](const ClientData& data) { 
             return data.getUUIDString() == useruid;  
         });
-    if (it != members.end()) 
-       return *it; 
-
-    throw std::runtime_error(RED  "User not found"  RESET);  
+    if (it == members.end()) 
+        throw std::runtime_error(RED  "User not found"  RESET);  
+    
+    return *it; 
 }
 
 /* Inserts a member to the member list */
@@ -111,7 +111,7 @@ std::vector<unsigned char> Client::receiveMessage(size_t size) {
 
     /* Let the user know how many bytes received, we have private functions for printing each part. */
     std::cout << "\n" << RED << "[RECEIVED] " << total_bytes_read << " bytes of data: " << RESET << std::endl;
-    for (size_t i = 0; i < buffer.size(); ++i)
+    for (size_t i = 0; i < buffer.size(); i++)
         std::cout << std::hex << std::setfill('0') << std::setw(2) << (int)buffer[i] << " ";
     std::cout << std::dec << std::endl;
     return buffer;

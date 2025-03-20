@@ -55,7 +55,7 @@ ResponseHeader ProtocolManager::getResponseHeader() const {
 /* Prints the response header */
 void ProtocolManager::printResponseHeader() {   
     std::cout << YELLOW << "Raw Header Bytes: " << RESET;
-    for (size_t i = 0; i < payload.size(); ++i)
+    for (size_t i = 0; i < payload.size(); i++)
         std::cout << std::hex << std::setfill('0') << std::setw(2) << (int)payload[i] << " ";
     std::cout << std::dec << std::endl;
     std::cout << YELLOW <<"Version: " << RESET <<(int)responseHeader.version << std::endl;
@@ -132,7 +132,7 @@ void ProtocolManager::messageHandler(int choice, Client* client){
         }
         /* User List Request */
         case 120:{
-            if (!(client -> getUser().has_value()))    throw std::runtime_error(YELLOW "Invalid option, you are already signed in!" RESET);
+            if (!(client -> getUser().has_value())) throw std::runtime_error(YELLOW "Invalid option, you are already signed in!" RESET);
             if (!(client -> getMembers()).empty())  throw std::runtime_error(YELLOW "To refresh client list, please re-log" RESET);
             uint16_t op = static_cast<uint16_t>(RequestOp::REQ_USER_LIST);
 
@@ -165,7 +165,7 @@ void ProtocolManager::messageHandler(int choice, Client* client){
         }
         /* Pull Awaiting Messages request */
         case 140:{
-            if (!(client -> getUser().has_value()))    throw std::runtime_error(YELLOW" Invalid option, you are already signed in!" RESET);
+            if (!(client -> getUser().has_value())) throw std::runtime_error(YELLOW" Invalid option, you are already signed in!" RESET);
             if ((client -> getMembers()).empty())   throw std::runtime_error(YELLOW  "Please request member list first!" RESET);
             uint16_t op = static_cast<uint16_t>(RequestOp::REQ_AWAITING_MESSAGES);
 
@@ -179,13 +179,13 @@ void ProtocolManager::messageHandler(int choice, Client* client){
         }
         /* Requesting Symmetric Key (type 1) */
         case 151:{
-            if (!(client -> getUser().has_value()))    throw std::runtime_error(YELLOW "Invalid option, you are already signed in!" RESET);
+            if (!(client -> getUser().has_value())) throw std::runtime_error(YELLOW "Invalid option, you are already signed in!" RESET);
             uint16_t op = static_cast<uint16_t>(RequestOp::REQ_SEND_MSG_TO_USR);
             uint8_t type = static_cast<uint8_t>(MessageType::REQ_SYMMETRIC_KEY);
 
             /* Get target username from client & message */
             ClientData& it = client -> getMember();
-            if (!it.getRSAPublicWrapper().has_value())   throw std::runtime_error((YELLOW "Please request a public key for " RESET )+it.getUsername());
+            if (!it.getRSAPublicWrapper().has_value())  throw std::runtime_error((YELLOW "Please request a public key for " RESET )+it.getUsername());
 
             /* Fix header */
             setRequestHeader(client -> getUser().value().getUUID(),2,op);
@@ -196,13 +196,13 @@ void ProtocolManager::messageHandler(int choice, Client* client){
         }
         /* Sending Symmetric Key (type 2)  */
         case 152:{
-            if (!(client -> getUser().has_value()))    throw std::runtime_error(YELLOW "Invalid option, you are already signed in!" RESET);
+            if (!(client -> getUser().has_value())) throw std::runtime_error(YELLOW "Invalid option, you are already signed in!" RESET);
             uint16_t op = static_cast<uint16_t>(RequestOp::REQ_SEND_MSG_TO_USR);
             uint8_t type = static_cast<uint8_t>(MessageType::SEND_SYMMETRIC_KEY);
 
             /* Finds user in list, checks for public key, saves a symmetric. */
             ClientData& it = client -> getMember();
-            if (!it.getRSAPublicWrapper().has_value()) throw std::runtime_error(YELLOW "Please request a public key for " RESET+ it.getUsername());
+            if (!it.getRSAPublicWrapper().has_value())  throw std::runtime_error(YELLOW "Please request a public key for " RESET+ it.getUsername());
             if (!it.getRequested()) throw std::runtime_error((YELLOW "User " RESET)+(it.getUsername())+ (YELLOW " Did not request a symmetric key!"));
             it.setNewSymmetric();
 

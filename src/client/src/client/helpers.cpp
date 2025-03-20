@@ -5,9 +5,9 @@
 /* Reads the server IP and port from server.info */
 std::pair<std::string, int> getServerInfo() {
     std::ifstream file("server.info");
-    if (!file.is_open()) {
+    if (!file.is_open()) 
         throw std::runtime_error(RED  "[ERROR] Could not open server.info"  RESET);
-    }
+    
 
     std::string line;
     std::getline(file, line); // Read the entire line
@@ -17,9 +17,9 @@ std::pair<std::string, int> getServerInfo() {
     std::string port_str;
     int port;
 
-    if (!std::getline(ss, ip, ':') || !std::getline(ss, port_str)) {
+    if (!std::getline(ss, ip, ':') || !std::getline(ss, port_str)) 
         throw std::runtime_error(RED  "[ERROR] Invalid format in server.info"  RESET);
-    }
+    
 
     try {
         port = std::stoi(port_str);
@@ -110,9 +110,9 @@ std::string receiveUsername(){
 /* Turns a binary vector to string representation for pretty printing */
 std::string binaryToStr(std::vector<unsigned char> data, const size_t size){
     std::ostringstream oss;
-    for (auto it = data.begin(); it != data.begin() + size; it++) {
+    for (auto it = data.begin(); it != data.begin() + size; it++) 
         oss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(*it);
-    }
+    
     return oss.str();
 }
 
